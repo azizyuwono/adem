@@ -1,50 +1,56 @@
 # adem
 
-> Biar MacBook nggak kepanasan sendiri.
+A lightweight, reactive health monitor for macOS. It watches system vitals and performs targeted clean-up actions when the machine shows signs of thermal or memory pressure.
 
-Bekerja di mesin yang sama setiap hari itu Capek, apalagi kalau mesin itu sudah berumur dan cenderung gampang panas.
+Built primarily for Intel-based MacBooks that tend to run hot under sustained load.
 
-Repo ini adalah teman yang jaga dari jauh. Ia memonitor kondisi CPU, RAM, dan suhu sistem. Kalau ada tanda-tanda sistem mulai kepanasan atau beban kerja terlalu berat, ia ambil langkah sederhana untuk meredamnya — purge memory, tekan proses yang lari liar, atau catat saja apa yang sedang terjadi.
+---
 
-Ia tidak sempurna. Tapi ia selalu ada.
+## How It Works
 
-## Apa Yang Dipantau
+Adem runs as a simple polling loop. Each cycle:
 
-- **CPU Usage** — apakah sedang bekerja terlalu keras.
-- **Thermal State** — apakah suhu sudah masuk zona bahaya.
-- **Memory Pressure** — apakah RAM hampir penuh.
+1. **Watcher** reads current CPU load, thermal state, and memory pressure through macOS built-in tools (`pmset`, `top`, `vm_stat`).
+2. **Healer** evaluates the readings against defined thresholds.
+3. If any threshold is crossed, Adem executes a response — typically a memory purge or a log entry for later review.
 
-## Respons Otomatis
+No daemon, no background agent. It is designed to be triggered externally — by a cron job, a CI runner, or by hand when the fans feel loud.
 
-Kalau sistem terlihat tidak sehat, `adem` mengambil satu atau beberapa langkah kecil:
-
-- **Cool Down** — kosongkan cache, hentikan proses yang tidak kritis.
-- **Log** — catat semua yang terjadi biar bisa dibaca nanti.
-
-## Struktur Kode
+## Project Structure
 
 ```
 src/
-├── watcher.py   # Ngambil data dari sistem
-├── healer.py    # Ambil keputusan dan bertindak
-└── main.py      # Jalankan semuanya
+├── watcher.py   # Reads system vitals
+├── healer.py    # Decides and executes responses
+└── main.py      # Single-run entry point
 
 tests/
-└── test_core.py # Cek apakah bagian-bagiannya masih jalan
+└── test_core.py # Verifies module contracts
 
 .github/workflows/
-└── daily.yml    # Berjalan otomatis setiap hari
+└── daily.yml    # Scheduled daily run via GitHub Actions
+
+logs/            # Output directory for health records
 ```
 
-## Jalanin di Komputer Sendiri
+## Local Development
 
 ```bash
 git clone git@github.com:azizyuwono/adem.git
 cd adem
 pip install -r requirements.txt
+python -m pytest tests/
 python -m src.main
 ```
 
+## Running on a Schedule
+
+Adem can be added to a local cron job (e.g. every 30 minutes) or run manually when the system feels sluggish. It outputs plain text logs that can be consumed by other tools or simply inspected at the end of the day.
+
+## Motivation
+
+Most system monitoring tools either require a full dashboard setup or run as heavy background services. Adem takes the opposite approach: it is small, stateless, and does nothing unless something is wrong. It exists to be *called*, not to run.
+
 ---
 
-_dikelola oleh [Moli](https://t.me/davevy)_
+*Maintained by [Moli](https://t.me/davevy).*
