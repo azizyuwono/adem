@@ -1,0 +1,26 @@
+name: Laporan Harian
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # 03:00 UTC = 10:00 WIB
+  workflow_dispatch:
+
+jobs:
+  laporan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m src.main
+      - run: |
+          git config user.name "adem[bot]"
+          git config user.email "bot@adem.dev"
+          git add data/ logs/
+          git diff --staged --quiet && echo "sehat" && exit 0
+          git commit -m "cek harian $(date '+%Y-%m-%d')"
+          git push

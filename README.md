@@ -1,33 +1,50 @@
-# Sentinel Core
+# adem
 
-Autonomous system diagnostic and self‑healing engine for macOS.
+> Biar MacBook nggak kepanasan sendiri.
 
-Born from the frustration of an aging MacBook Intel that throttles
-under load and runs hot even when idling.
+Bekerja di mesin yang sama setiap hari itu Capek, apalagi kalau mesin itu sudah berumur dan cenderung gampang panas.
 
-## How It Lives
+Repo ini adalah teman yang jaga dari jauh. Ia memonitor kondisi CPU, RAM, dan suhu sistem. Kalau ada tanda-tanda sistem mulai kepanasan atau beban kerja terlalu berat, ia ambil langkah sederhana untuk meredamnya — purge memory, tekan proses yang lari liar, atau catat saja apa yang sedang terjadi.
 
-- `Watcher` polls CPU temperature, load, memory pressure, and
-  other vitals through the system's own metrics (no third‑party
-  kernel extensions).
-- `Healer` decides what to do when things go wrong — emit a last‑resort
-  purge, nudge runaway processes, or just record the event for
-  later analysis.
+Ia tidak sempurna. Tapi ia selalu ada.
 
-## Design
+## Apa Yang Dipantau
 
-The engine is kept minimal on purpose. No daemon, no launchd plist.
-It exists to be *called* — manually, by a cron job, or by another
-system agent (like a Hermes profile). Complexity is avoided; clarity
-is preferred.
+- **CPU Usage** — apakah sedang bekerja terlalu keras.
+- **Thermal State** — apakah suhu sudah masuk zona bahaya.
+- **Memory Pressure** — apakah RAM hampir penuh.
+
+## Respons Otomatis
+
+Kalau sistem terlihat tidak sehat, `adem` mengambil satu atau beberapa langkah kecil:
+
+- **Cool Down** — kosongkan cache, hentikan proses yang tidak kritis.
+- **Log** — catat semua yang terjadi biar bisa dibaca nanti.
+
+## Struktur Kode
+
+```
+src/
+├── watcher.py   # Ngambil data dari sistem
+├── healer.py    # Ambil keputusan dan bertindak
+└── main.py      # Jalankan semuanya
+
+tests/
+└── test_core.py # Cek apakah bagian-bagiannya masih jalan
+
+.github/workflows/
+└── daily.yml    # Berjalan otomatis setiap hari
+```
+
+## Jalanin di Komputer Sendiri
 
 ```bash
+git clone git@github.com:azizyuwono/adem.git
+cd adem
+pip install -r requirements.txt
 python -m src.main
 ```
 
-## Tests
+---
 
-```bash
-pip install -r requirements.txt
-pytest
-```
+_dikelola oleh [Moli](https://t.me/davevy)_
