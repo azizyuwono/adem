@@ -10,9 +10,12 @@ Built primarily for Intel-based MacBooks that tend to run hot under sustained lo
 
 Adem runs as a simple polling loop. Each cycle:
 
-1. **Watcher** reads current CPU load, thermal state, and memory pressure through macOS built-in tools (`pmset`, `top`, `vm_stat`).
+1. **Watcher** reads current CPU load, thermal state, memory pressure, and disk usage through macOS built-in tools (`pmset`, `top`, `vm_stat`, `memory_pressure`).
 2. **Healer** evaluates the readings against defined thresholds.
-3. If any threshold is crossed, Adem executes a response — typically a memory purge or a log entry for later review.
+3. If any threshold is crossed, Adem executes a response:
+   - **CPU/Thermal**: Requests a system memory purge to reduce swap-related CPU overhead.
+   - **Memory**: Triggers memory cleanup.
+   - **Disk**: Cleans up development caches (pip, brew, npm, yarn) if usage > 90%.
 
 No daemon, no background agent. It is designed to be triggered externally — by a cron job, a CI runner, or by hand when the fans feel loud.
 
@@ -22,15 +25,12 @@ No daemon, no background agent. It is designed to be triggered externally — by
 src/
 ├── watcher.py   # Reads system vitals
 ├── healer.py    # Decides and executes responses
-└── main.py      # Single-run entry point
+└── main.py      # CLI entry point
 
 tests/
-└── test_core.py # Verifies module contracts
+└── test_core.py # Unit tests
 
-.github/workflows/
-└── daily.yml    # Scheduled daily run via GitHub Actions
-
-logs/            # Output directory for health records
+logs/            # Health records and logs
 ```
 
 ## Local Development
@@ -39,17 +39,16 @@ logs/            # Output directory for health records
 git clone git@github.com:azizyuwono/adem.git
 cd adem
 pip install -r requirements.txt
-python -m pytest tests/
-python -m src.main
+PYTHONPATH=. python3 -m pytest tests/
+python3 src/main.py
 ```
 
 ## Running on a Schedule
 
-Adem can be added to a local cron job (e.g. every 30 minutes) or run manually when the system feels sluggish. It outputs plain text logs that can be consumed by other tools or simply inspected at the end of the day.
-
-## Motivation
-
-Most system monitoring tools either require a full dashboard setup or run as heavy background services. Adem takes the opposite approach: it is small, stateless, and does nothing unless something is wrong. It exists to be *called*, not to run.
+Add to crontab to run every 30 minutes:
+```bash
+*/30 * * * * cd /path/to/adem && /usr/bin/python3 src/main.py
+```
 
 ---
 
